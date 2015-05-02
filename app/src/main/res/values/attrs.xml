@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="CollapsibleHeaderLayout">
+        <attr name="autoHideHeader" format="boolean"/>
+        <attr name="titleText" format="string"/>
+        <attr name="subTitleText" format="string"/>
+        <attr name="headerImage" format="reference"/>
+        <attr name="toolbarBackgroundColor" format="color"/>
+        <attr name="titleTextColor" format="color"/>
+        <attr name="subTitleTextColor" format="color"/>
+    </declare-styleable>
+
+</resources>

@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">CustomViews</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_1">Cabin</string>
+    <string name="title_2">Camping</string>
+    <string name="title_3">Hiking</string>
+</resources>
