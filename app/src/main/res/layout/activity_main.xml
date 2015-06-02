@@ -5,18 +5,28 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-   <com.hunterrobbert.customviews.CollapsibleHeaderLayout
-       android:id="@+id/collapsible_header_layout"
-       android:layout_width="match_parent"
-       android:layout_height="wrap_content"
-       app:headerImage="@drawable/woods"
-       app:titleText="Devils Thumb"
-       app:titleTextColor="@android:color/white"
-       app:subTitleText="Alaska"/>
+
+   <!--<ImageView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="@dimen/image_header_size"-->
+        <!--android:scaleType=""/>-->
 
     <android.support.v4.view.ViewPager
         android:id="@+id/view_pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
+
+   <com.hunterrobbert.customviews.CollapsibleHeaderLayout
+       android:id="@+id/collapsible_header_layout"
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       app:headerImage="@drawable/sun"
+       app:titleText="Mount Kilimanjaro"
+       app:titleTextColor="@android:color/white"
+       app:subTitleText="Africa"/>
+
+
+
+
 
 </RelativeLayout>

@@ -18,9 +18,8 @@ public class MainActivity extends ActionBarActivity {
             R.string.title_3
     };
 
-    private CollapsibleHeaderLayout mCollapsibleHeaderLayout;
+    public CollapsibleHeaderLayout mCollapsibleHeaderLayout;
 
-    private FragmentViewPagerAdapter mFragmentViewPagerAdapter;
     private ViewPager mViewPager;
 
     @Override
@@ -31,37 +30,17 @@ public class MainActivity extends ActionBarActivity {
         mCollapsibleHeaderLayout = (CollapsibleHeaderLayout) findViewById(R.id.collapsible_header_layout);
         mViewPager = (ViewPager) findViewById(R.id.view_pager);
 
-
-
-        mFragmentViewPagerAdapter = new FragmentViewPagerAdapter(getFragmentManager());
-        mViewPager.setAdapter(mFragmentViewPagerAdapter);
-
         mCollapsibleHeaderLayout.setSlidingTabLayoutContentDescriptions(mTabTitles);
+
+        FragmentViewPagerAdapter fragmentViewPagerAdapter = new FragmentViewPagerAdapter(getFragmentManager());
+        mViewPager.setAdapter(fragmentViewPagerAdapter);
         mCollapsibleHeaderLayout.setViewPager(mViewPager);
 
     }
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
+    //make the header layout accessible to the viewpager's fragments
+    public CollapsibleHeaderLayout getCollapsibleHeaderLayout() {
+        return mCollapsibleHeaderLayout;
     }
 
 

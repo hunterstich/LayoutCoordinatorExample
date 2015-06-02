@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Typeface;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.text.Layout;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.util.TypedValue;
@@ -45,6 +46,7 @@ public class SlidingTabLayout extends HorizontalScrollView {
     private List<View> mAllTabs = new ArrayList<>();
 
     private ViewPager mViewPager;
+    private LayoutCoordinator mLayoutCoordinator;
     private SparseArray<String> mContentsDescriptions = new SparseArray<String>();
     private ViewPager.OnPageChangeListener mViewPageChangeListener;
 
@@ -107,6 +109,10 @@ public class SlidingTabLayout extends HorizontalScrollView {
             viewPager.setOnPageChangeListener(new InternalViewPageListener());
             populateTabStrip();
         }
+    }
+
+    public void setLayoutCoordinator(LayoutCoordinator layoutCoordinator) {
+        mLayoutCoordinator = layoutCoordinator;
     }
 
     protected TextView createDefaultTabView(Context context) {
@@ -223,6 +229,8 @@ public class SlidingTabLayout extends HorizontalScrollView {
                     : 0;
             scrollToTab(position, extraOffset);
 
+
+
             if (mViewPageChangeListener != null) {
                 mViewPageChangeListener.onPageScrolled(position, positionOffset, positionOffsetPixels);
             }
@@ -248,6 +256,10 @@ public class SlidingTabLayout extends HorizontalScrollView {
             }
             if (mViewPageChangeListener != null) {
                 mViewPageChangeListener.onPageSelected(position);
+            }
+
+            if (mLayoutCoordinator != null) {
+                mLayoutCoordinator.onViewPagerPageSelected(position);
             }
 
         }

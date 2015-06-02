@@ -3,15 +3,15 @@ package com.hunterrobbert.customviews;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -19,7 +19,7 @@ import android.widget.TextView;
  * Created by hunter on 4/27/15.
  */
 
-public class CollapsibleHeaderLayout extends RelativeLayout{
+public class CollapsibleHeaderLayout extends RelativeLayout implements LayoutCoordinator.CoordinatorInterface {
 
     private static final String TAG = CollapsibleHeaderLayout.class.getSimpleName();
 
@@ -29,6 +29,7 @@ public class CollapsibleHeaderLayout extends RelativeLayout{
     private static final String COLOR_SUBTITLE_TEXT = "color_subtitle_text";
 
 
+    private LayoutCoordinator mLayoutCoordinator;
 
     //attrs
     protected boolean mAutoHideHeader;
@@ -40,14 +41,22 @@ public class CollapsibleHeaderLayout extends RelativeLayout{
     protected int mSubTitleTextColor;
 
     //views
+    private FrameLayout mHeaderImageContainer;
     private ImageView mHeaderImage;
     private RelativeLayout mHeaderBox;
     private View mTitleBackgroundView;
-    private LinearLayout mTitleBox;
+//    private LinearLayout mTitleBox;
     private TextView mTitleTextView;
     private TextView mSubTitleTextView;
     private SlidingTabLayout mSlidingTabLayout;
 
+    //constants
+    private int mTitleBackgroundOriginalHeight;
+    private int mHeaderHeight;
+    private int mScrollPosition;
+
+    private FragmentPagerAdapter mFragmentPagerAdapter;
+    private ViewPager mViewPager;
 
     public CollapsibleHeaderLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -75,14 +84,31 @@ public class CollapsibleHeaderLayout extends RelativeLayout{
     }
 
     @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        //called after onFinishInflate
+
+        mHeaderHeight = h;
+        mTitleBackgroundOriginalHeight = mTitleBackgroundView.getMeasuredHeight();
+
+        adjustExpandedToolbarLayout(getExpandedToolbarHeight());
+        getLayoutCoordinator().onHeaderSizedSet(mHeaderHeight);
+    }
+
+
+
+    @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
 
+        getLayoutCoordinator();
+
         //find & set views
+        mHeaderImageContainer = (FrameLayout) this.findViewById(R.id.header_image_container);
         mHeaderImage = (ImageView) this.findViewById(R.id.header_image);
         mHeaderBox = (RelativeLayout) this.findViewById(R.id.header_box);
         mTitleBackgroundView = this.findViewById(R.id.title_background);
-        mTitleBox = (LinearLayout) this.findViewById(R.id.title_box);
+//        mTitleBox = (LinearLayout) this.findViewById(R.id.title_box);
         mTitleTextView = (TextView) this.findViewById(R.id.title_text);
         mSubTitleTextView = (TextView) this.findViewById(R.id.sub_title_text);
         mSlidingTabLayout = (SlidingTabLayout) this.findViewById(R.id.sliding_tabs);
@@ -102,14 +128,48 @@ public class CollapsibleHeaderLayout extends RelativeLayout{
         mSlidingTabLayout.setDistributeEvenly(true);
     }
 
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        getLayoutCoordinator().attachTitleTextView(mTitleTextView);
+        getLayoutCoordinator().attachSubTitleTextView(mSubTitleTextView);
+        getLayoutCoordinator().attachTabs(mSlidingTabLayout);
+        getLayoutCoordinator().attachToolbarBackground(mTitleBackgroundView);
+        getLayoutCoordinator().attachHeaderImage(mHeaderImageContainer, mHeaderImage);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+    }
+
+
+    private void adjustExpandedToolbarLayout(int height) {
+        Log.d(TAG, "adjustExpandedToolbarLayout = " + height);
+        RelativeLayout.LayoutParams params = (LayoutParams) mTitleBackgroundView.getLayoutParams();
+        params.height = height;
+
+    }
+
     public void setViewPager(ViewPager viewPager) {
         mSlidingTabLayout.setViewPager(viewPager);
+        mSlidingTabLayout.setLayoutCoordinator(getLayoutCoordinator());
+    }
+
+
+    public void setDistributeTabsEvenly(boolean evenlyDistribute) {
+        mSlidingTabLayout.setDistributeEvenly(evenlyDistribute);
+        //TODO: need to request layout?
     }
 
     public void setSlidingTabLayoutContentDescriptions(int[] titleStringArray) {
         for (int i = 0; i < titleStringArray.length; i++) {
             mSlidingTabLayout.setContentDescription(i, getResources().getString(titleStringArray[i]));
         }
+    }
+
+    private int getExpandedToolbarHeight() {
+        return mSlidingTabLayout.getMeasuredHeight() + mTitleBackgroundOriginalHeight;
     }
 
     public boolean isAutoHideHeader() {
@@ -171,4 +231,35 @@ public class CollapsibleHeaderLayout extends RelativeLayout{
 
         return color;
     }
+
+    /** Implement necessary methods for translations */
+
+    @Override
+    public LayoutCoordinator getLayoutCoordinator() {
+        if (mLayoutCoordinator == null) {
+            mLayoutCoordinator = new LayoutCoordinator(getContext());
+        }
+
+        return mLayoutCoordinator;
+    }
+
+    @Override
+    public int getHeaderHeight() {
+        return mHeaderHeight;
+    }
+
+    @Override
+    public void registerScrollableView(View view, String uniqueIdentifier) {
+        // Each view or fragment in a viewpager needs a unique id.
+        // Why? - Say you have four tabs, but only 3 are held by the viewpager at any given time
+        // if you page to tab 3, the viewpager is then holding tabs 2, 3 and 4 and destroys 1.
+        // When you page back to tab 2, tab one's fragment
+        // is then re-created and again calls registerScrollableView. To avoid
+        // endlessly adding fragments, we need a way to check if they have been previously
+        // been registered, and instead, update them.
+
+        getLayoutCoordinator().registerScrollableView(view, uniqueIdentifier);
+    }
+
+
 }

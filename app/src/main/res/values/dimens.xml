@@ -14,5 +14,9 @@
     <dimen name="action_bar_text_size">22sp</dimen>
     <dimen name="action_bar_height">56dp</dimen>
     <dimen name="small_tab_size">32dp</dimen>
+    <dimen name="header_padding_bottom">24dp</dimen>
+
+    //translateable toolbar component constants
+    <dimen name="toolbar_title_keyline_left">72dp</dimen>
 
 </resources>
