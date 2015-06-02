@@ -56,7 +56,7 @@
             android:textColor="?colorAccent"
             android:layout_above="@+id/sliding_tabs"/>
 
-        <com.hunterrobbert.customviews.SlidingTabLayout
+        <com.hunterrobbert.layoutcoordinatorexample.SlidingTabLayout
             android:id="@+id/sliding_tabs"
             android:layout_width="match_parent"
             android:layout_height="@dimen/small_tab_size"

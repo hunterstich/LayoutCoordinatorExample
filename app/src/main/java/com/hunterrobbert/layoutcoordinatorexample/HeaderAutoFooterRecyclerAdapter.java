@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hunterrobbert.customviews;
+package com.hunterrobbert.layoutcoordinatorexample;
 
 import android.content.Context;
 import android.content.res.Resources;

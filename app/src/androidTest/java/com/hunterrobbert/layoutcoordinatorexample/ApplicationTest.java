@@ -1,4 +1,4 @@
-package com.hunterrobbert.customviews;
+package com.hunterrobbert.layoutcoordinatorexample;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

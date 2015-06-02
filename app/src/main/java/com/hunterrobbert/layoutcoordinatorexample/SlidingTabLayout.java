@@ -1,10 +1,9 @@
-package com.hunterrobbert.customviews;
+package com.hunterrobbert.layoutcoordinatorexample;
 
 import android.content.Context;
 import android.graphics.Typeface;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.text.Layout;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.util.TypedValue;
