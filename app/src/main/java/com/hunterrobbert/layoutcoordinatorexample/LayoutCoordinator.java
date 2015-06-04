@@ -252,8 +252,19 @@ public class LayoutCoordinator {
                     int firstVisibleChild = manager.findFirstVisibleItemPosition();
                     if (firstVisibleChild == 0) {
                         //scroll to toolbar offset
-                        setRecyclerObjectsScrollHold(recyclerViewObj, mHeaderHeight - toolbarOffset);
-                        scrollRecyclerViewToPosition(recyclerViewObj, mHeaderHeight - toolbarOffset);
+                        Log.d(TAG, "mHeaderHeight: " + mHeaderHeight + ", scrollPos: " + scrollPosition + ", toolbarOff: " + toolbarOffset);
+                        if (mCurrentViewPage == i) {
+                            //were talking about the current fragment/recyclerview
+                            setRecyclerObjectsScrollHold(recyclerViewObj, scrollPosition);
+                        } else {
+                            if (mHeaderHeight - recyclerViewObj.scrollPosition > toolbarOffset) {
+                                setRecyclerObjectsScrollHold(recyclerViewObj, mHeaderHeight - toolbarOffset);
+                                scrollRecyclerViewToPosition(recyclerViewObj, mHeaderHeight - toolbarOffset);
+                            }
+                        }
+
+
+
                     }
                 }
 

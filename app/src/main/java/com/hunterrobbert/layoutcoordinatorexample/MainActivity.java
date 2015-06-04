@@ -47,12 +47,17 @@ public class MainActivity extends ActionBarActivity {
                 .withBehavior(CoordinatedView.CIRCULAR_HIDE_REVEAL, CoordinatedView.QUATER_POINT)
                 .attach();
 
-        mCollapsibleHeaderLayout.attachCoordinatedView(mOverflow)
-                .startingAt(new Position(mCollapsibleHeaderLayout.getLayoutCoordinator(),mOverflow)
+
+        //Programmatically define where the view should be in the header when the scrollable views are scrolled all the way to the top
+        //The views starting point
+        Position overFlowStart = new Position(mCollapsibleHeaderLayout.getLayoutCoordinator(),mOverflow)
                 .setMarginRight(Position.LOC_KEYLINE_1)
                 .setMarginTop(Position.LOC_EXTENDED_TOOLBAR_CENTERLINE, Position.VIEW_CENTERLINE_Y)
                 .setRules(Position.RULES_ALIGN_PARENT_RIGHT)
-                .buildStart())
+                .buildStart();
+
+        mCollapsibleHeaderLayout.attachCoordinatedView(mOverflow)
+                .startingAt(overFlowStart)
                 .endingAt(CoordinatedView.END_COLLAPSED_TOOLBAR_POSITION_1)
                 .attach();
 
@@ -69,7 +74,7 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     protected void onStop() {
-        mCollapsibleHeaderLayout.getLayoutCoordinator().releaseOnLayoutCoordinatorScrollWatcher();
+//        mCollapsibleHeaderLayout.getLayoutCoordinator().releaseOnLayoutCoordinatorScrollWatcher();
         super.onStop();
     }
 

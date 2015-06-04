@@ -9,7 +9,6 @@ import android.widget.RelativeLayout;
 public class CoordinatedView {
 
     //view starting locations
-    public static final String CURRENT_POSITION = null;
     public static final String START_FAB_STRADDLE_EXPANDED_TOOLBAR_TOP_RIGHT = "start_fab_straddle_expanded_toolbar_top_right";
 
     //view ending locations
