@@ -1,9 +1,13 @@
 package com.hunterrobbert.layoutcoordinatorexample;
 
 import android.content.Context;
+import android.graphics.Point;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.view.Display;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -60,11 +64,13 @@ public class LayoutCoordinator {
     private FrameLayout mHeaderImageContainer;
     private ImageView mHeaderImage;
 
+    private ArrayList<CoordinatedView> mCoordinatedViews;
+
     private boolean mHeaderSet = false;
     private int mHeaderHeight;
     private int mRegularToolbarHeight;
     private int mBeginParallaxTranslations = 200;
-    private int mCompleteAllTranslations;
+    public int mCompleteAllTranslations;
 
 
     private int mTitleTextViewOriginalY = 0;
@@ -84,6 +90,20 @@ public class LayoutCoordinator {
         LayoutCoordinator getLayoutCoordinator();
         int getHeaderHeight();
         void registerScrollableView(View view, String uniqueIdentifier);
+    }
+
+    private OnLayoutCoordinatorScrollWatcher mLayoutScrollWatcher;
+    // used to watch scroll for attaching custom views to the layout and defining their custom behavior
+    public interface OnLayoutCoordinatorScrollWatcher {
+        void onScrolled(int scrollPosition);
+    }
+
+    public void setOnLayoutCoordinatorScrollWatcher(OnLayoutCoordinatorScrollWatcher callbacks) {
+        mLayoutScrollWatcher = callbacks;
+    }
+
+    public void releaseOnLayoutCoordinatorScrollWatcher() {
+        mLayoutScrollWatcher = null;
     }
 
     public LayoutCoordinator(Context context) {
@@ -135,6 +155,17 @@ public class LayoutCoordinator {
         mHeaderImage = imageView;
     }
 
+
+
+    public void attachCoordinatedView(CoordinatedView coordinatedView) {
+        if (mCoordinatedViews == null) {
+            mCoordinatedViews = new ArrayList<>();
+        }
+
+        mCoordinatedViews.add(coordinatedView);
+    }
+
+
     public void onHeaderSizedSet(int headerHeight) {
         mHeaderHeight = headerHeight;
         mHeaderSet = true;
@@ -146,6 +177,15 @@ public class LayoutCoordinator {
                 ((HeaderAutoFooterRecyclerAdapter)adapter).updateHeaderHeight(headerHeight);
             }
 
+        }
+
+
+    }
+
+    private void updateCoordinatedViewsLayoutConstants() {
+        for (int c = 0; c < mCoordinatedViews.size(); c++) {
+            mCoordinatedViews.get(c).adjustStartParams();
+            mCoordinatedViews.get(c).adjustEndPoints();
         }
     }
 
@@ -168,12 +208,20 @@ public class LayoutCoordinator {
                 super.onScrolled(recyclerView, dx, dy);
                 scrollAccumulator = scrollAccumulator + dy;
 
+                if (mLayoutScrollWatcher != null) {
+                    mLayoutScrollWatcher.onScrolled(scrollAccumulator);
+                }
+
+                updateCoordinatedViewsLayoutConstants();
+
                 //translate attached views
                 translateTitleText(scrollAccumulator);
                 translateSubTitleText(scrollAccumulator);
                 translateTabs(scrollAccumulator);
                 translateToolbarBackground(scrollAccumulator);
                 translateHeaderImage(scrollAccumulator);
+
+                translateCoordinatedViews(scrollAccumulator);
             }
 
             @Override
@@ -296,11 +344,21 @@ public class LayoutCoordinator {
         if (mToolbarBackground != null) {
             if (mToolbarBackgroundOriginalY == 0) {
                 mToolbarBackgroundOriginalY = (int) mToolbarBackground.getY();
-                //mCompleteAllTranslations = -mToolbarBackgroundOriginalY;
                 return;
             }
         }
         mToolbarBackground.setTranslationY(Math.max(-scrollPosition, mCompleteAllTranslations));
+    }
+
+    public int getToolbarBackgroundOriginalY() {
+        return mToolbarBackgroundOriginalY;
+    }
+
+    public int getExtToolbarHeight() {
+        if (mToolbarBackground != null) {
+            return mToolbarBackground.getHeight();
+        }
+        return 0;
     }
 
 
@@ -314,9 +372,73 @@ public class LayoutCoordinator {
         mHeaderImage.setTranslationY(top * -0.7f);
     }
 
-    private int getDimPx(int resourceId) {
+
+    private void translateCoordinatedViews(int scrollPosition) {
+        for (int i = 0; i < mCoordinatedViews.size(); i++) {
+            CoordinatedView coordinatedView = mCoordinatedViews.get(i);
+            int endPointX = coordinatedView.mEndPosition.mMaxXTrans;
+            int endPointY = coordinatedView.mEndPosition.mMaxYTrans;
+
+            double xParallax = getScaleBetweenRange(scrollPosition,0,-mCompleteAllTranslations,0,endPointX);
+            double yParallax = getScaleBetweenRange(scrollPosition,0,-mCompleteAllTranslations,0,endPointY);
+            coordinatedView.mView.setTranslationX((float) -xParallax);
+            coordinatedView.mView.setTranslationY((float) -yParallax);
+
+
+
+            // behavior instructions
+            if (coordinatedView.mBehavior != null) {
+                switch (coordinatedView.mBehavior) {
+                    case CoordinatedView.CIRCULAR_HIDE_REVEAL :
+                        if (coordinatedView.mWhenReaches != 0) {
+                            int keyPoint = (int) (endPointY * coordinatedView.mWhenReaches);
+
+                            if (keyPoint > 0 && scrollPosition > keyPoint) {
+                                //circular hide
+                                if (!coordinatedView.behaviorActive) {
+                                    animateOut(coordinatedView);
+                                    coordinatedView.behaviorActive = true;
+                                }
+                            } else {
+                                //circular reveal
+                                if (coordinatedView.behaviorActive) {
+                                    animateIn(coordinatedView);
+                                    coordinatedView.behaviorActive = false;
+                                }
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+    }
+
+
+    private void animateOut(final CoordinatedView coordinatedView) {
+        coordinatedView.mView.animate().cancel();
+        coordinatedView.mView.animate().scaleX(0).scaleY(0).setDuration(200).start();
+    }
+
+    private void animateIn(final CoordinatedView coordinatedView) {
+        coordinatedView.mView.animate().cancel();
+        coordinatedView.mView.animate().scaleX(1).scaleY(1).setDuration(200).start();
+    }
+
+    public int getDimPx(int resourceId) {
         if (mContext != null) {
             return mContext.getResources().getDimensionPixelSize(resourceId);
+        }
+
+        return 0;
+    }
+
+    public int getDisplayWidth() {
+        if (mContext != null) {
+            WindowManager windowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
+            Display display = windowManager.getDefaultDisplay();
+            Point size = new Point();
+            display.getSize(size);
+            return size.x;
         }
 
         return 0;

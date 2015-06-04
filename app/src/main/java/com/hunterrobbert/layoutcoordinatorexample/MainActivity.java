@@ -5,6 +5,8 @@ import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -18,6 +20,8 @@ public class MainActivity extends ActionBarActivity {
     public CollapsibleHeaderLayout mCollapsibleHeaderLayout;
 
     private ViewPager mViewPager;
+    private FrameLayout mFab;
+    private ImageView mOverflow;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +30,8 @@ public class MainActivity extends ActionBarActivity {
 
         mCollapsibleHeaderLayout = (CollapsibleHeaderLayout) findViewById(R.id.collapsible_header_layout);
         mViewPager = (ViewPager) findViewById(R.id.view_pager);
+        mFab = (FrameLayout) findViewById(R.id.fab);
+        mOverflow = (ImageView) findViewById(R.id.overflow);
 
         mCollapsibleHeaderLayout.setSlidingTabLayoutContentDescriptions(mTabTitles);
 
@@ -33,6 +39,38 @@ public class MainActivity extends ActionBarActivity {
         mViewPager.setAdapter(fragmentViewPagerAdapter);
         mCollapsibleHeaderLayout.setViewPager(mViewPager);
 
+
+        //Add a custom view to the header layout and define its scroll behavior/any extra behaviors
+        mCollapsibleHeaderLayout.attachCoordinatedView(mFab)
+                .startingAt(CoordinatedView.START_FAB_STRADDLE_EXPANDED_TOOLBAR_TOP_RIGHT)
+                .endingAt(CoordinatedView.END_DEFAULT)
+                .withBehavior(CoordinatedView.CIRCULAR_HIDE_REVEAL, CoordinatedView.QUATER_POINT)
+                .attach();
+
+        mCollapsibleHeaderLayout.attachCoordinatedView(mOverflow)
+                .startingAt(new Position(mCollapsibleHeaderLayout.getLayoutCoordinator(),mOverflow)
+                .setMarginRight(Position.LOC_KEYLINE_1)
+                .setMarginTop(Position.LOC_EXTENDED_TOOLBAR_CENTERLINE, Position.VIEW_CENTERLINE_Y)
+                .setRules(Position.RULES_ALIGN_PARENT_RIGHT)
+                .buildStart())
+                .endingAt(CoordinatedView.END_COLLAPSED_TOOLBAR_POSITION_1)
+                .attach();
+
+
+        // If absolute control is needed over how views are translating/animating, an OnLayoutCoordinatorScrollWatcher can be set
+//        mCollapsibleHeaderLayout.getLayoutCoordinator().setOnLayoutCoordinatorScrollWatcher(new LayoutCoordinator.OnLayoutCoordinatorScrollWatcher() {
+//            @Override
+//            public void onScrolled(int scrollPosition) {
+//                mFab.setTranslationY(-scrollPosition);
+//            }
+//        });
+
+    }
+
+    @Override
+    protected void onStop() {
+        mCollapsibleHeaderLayout.getLayoutCoordinator().releaseOnLayoutCoordinatorScrollWatcher();
+        super.onStop();
     }
 
     //make the header layout accessible to the viewpager's fragments

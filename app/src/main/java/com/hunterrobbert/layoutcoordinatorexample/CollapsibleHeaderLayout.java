@@ -261,5 +261,9 @@ public class CollapsibleHeaderLayout extends RelativeLayout implements LayoutCoo
         getLayoutCoordinator().registerScrollableView(view, uniqueIdentifier);
     }
 
+    public CoordinatedView attachCoordinatedView(View view) {
+        return new CoordinatedView(view, this);
+    }
+
 
 }

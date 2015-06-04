@@ -5,12 +5,6 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-
-   <!--<ImageView-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="@dimen/image_header_size"-->
-        <!--android:scaleType=""/>-->
-
     <android.support.v4.view.ViewPager
         android:id="@+id/view_pager"
         android:layout_width="match_parent"
@@ -23,7 +17,21 @@
        app:headerImage="@drawable/sun"
        app:titleText="Mount Kilimanjaro"
        app:titleTextColor="@android:color/white"
-       app:subTitleText="Africa"/>
+       app:subTitleText="Africa">
+
+       <ImageView
+           android:id="@+id/overflow"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:src="@drawable/ic_more_vert_white_24dp"/>
+
+       <FrameLayout
+           android:id="@+id/fab"
+           android:layout_width="52dp"
+           android:layout_height="52dp"
+           android:background="@drawable/fab_circle_lollipop"/>
+
+   </com.hunterrobbert.layoutcoordinatorexample.CollapsibleHeaderLayout>
 
 
 

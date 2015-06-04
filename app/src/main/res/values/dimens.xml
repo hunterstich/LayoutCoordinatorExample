@@ -1,6 +1,12 @@
 <resources>
     <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="default_keyline_1">16dp</dimen>
+    <dimen name="default_keyline_2">24dp</dimen>
+    <dimen name="default_keyline_3">32dp</dimen>
+    <dimen name="default_keyline_4">40dp</dimen>
+    <dimen name="default_keyline_5">48dp</dimen>
+
+
     <dimen name="text_size_small">12sp</dimen>
     <dimen name="large_fab_size">56dp</dimen>
 
