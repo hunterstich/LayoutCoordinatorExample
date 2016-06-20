@@ -93,6 +93,10 @@ public class HeaderAutoFooterRecyclerAdapter extends RecyclerView.Adapter<Recycl
     }
 
     public void updateHeaderHeight(int headerHeight) {
+        if (mHeaderHeight == headerHeight) {
+            return;
+        }
+
         mHeaderHeight = headerHeight;
         notifyItemChanged(0);
         Log.d(TAG, "updateHeaderHeight called in adapter. new header height: " + headerHeight);

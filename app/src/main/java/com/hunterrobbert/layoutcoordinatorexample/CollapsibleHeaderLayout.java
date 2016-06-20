@@ -143,7 +143,6 @@ public class CollapsibleHeaderLayout extends RelativeLayout implements LayoutCoo
         super.onDetachedFromWindow();
     }
 
-
     private void adjustExpandedToolbarLayout(int height) {
         Log.d(TAG, "adjustExpandedToolbarLayout = " + height);
         RelativeLayout.LayoutParams params = (LayoutParams) mTitleBackgroundView.getLayoutParams();

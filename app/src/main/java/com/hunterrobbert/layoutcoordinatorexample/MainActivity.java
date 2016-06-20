@@ -65,8 +65,8 @@ public class MainActivity extends ActionBarActivity {
         // If absolute control is needed over how views are translating/animating, an OnLayoutCoordinatorScrollWatcher can be set
 //        mCollapsibleHeaderLayout.getLayoutCoordinator().setOnLayoutCoordinatorScrollWatcher(new LayoutCoordinator.OnLayoutCoordinatorScrollWatcher() {
 //            @Override
-//            public void onScrolled(int scrollPosition) {
-//                mFab.setTranslationY(-scrollPosition);
+//            public void onScrolled(int mScrollPosition) {
+//                mFab.setTranslationY(-mScrollPosition);
 //            }
 //        });
 
@@ -92,12 +92,31 @@ public class MainActivity extends ActionBarActivity {
 
         @Override
         public android.app.Fragment getItem(int i) {
-            SampleFragment sampleFragment = new SampleFragment();
-            Bundle args = new Bundle();
-            args.putString(SampleFragment.KEY_FRAGMENT_TITLE, getString(mTabTitles[i]));
-            sampleFragment.setArguments(args);
-            return sampleFragment;
+            switch (i) {
+                case 0 :
+                    return initSampleRecyclerFrag(i);
+                case 1 :
+                    return initSampleRecyclerFrag(i);
+                default:
+                    return initSampleListFrag(i);
+               }
 
+        }
+
+        private SampleRecyclerFragment initSampleRecyclerFrag(int i) {
+            SampleRecyclerFragment sampleRecyclerFragment = new SampleRecyclerFragment();
+            Bundle args = new Bundle();
+            args.putString(SampleRecyclerFragment.KEY_FRAGMENT_TITLE, getString(mTabTitles[i]));
+            sampleRecyclerFragment.setArguments(args);
+            return sampleRecyclerFragment;
+        }
+
+        private SampleListFragment initSampleListFrag(int i) {
+            SampleListFragment sampleListFragment = new SampleListFragment();
+            Bundle args = new Bundle();
+            args.putString(SampleListFragment.KEY_FRAGMENT_TITLE, getString(mTabTitles[i]));
+            sampleListFragment.setArguments(args);
+            return sampleListFragment;
         }
 
         @Override

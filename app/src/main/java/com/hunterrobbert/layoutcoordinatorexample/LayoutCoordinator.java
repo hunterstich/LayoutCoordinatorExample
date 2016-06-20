@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.Point;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
@@ -15,46 +14,16 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 /**
- * Created by hunter on 5/20/15.
+ * Created by hunter on 5/20/15
  */
-public class LayoutCoordinator {
+
+public class LayoutCoordinator implements ScrollAccumulator.OnScrollAccumulationListener {
 
     private static final String TAG = LayoutCoordinator.class.getSimpleName();
 
     private Context mContext;
 
-    class RecyclerViewObj {
-
-        RecyclerView recyclerView;
-        String uniqueIdentifier;
-        int scrollPosition;
-
-        public RecyclerViewObj(RecyclerView view, String uniqueId) {
-            recyclerView = view;
-            uniqueIdentifier = uniqueId;
-            initScrollPosition();
-        }
-
-        public void initScrollPosition() {
-
-            if (mHeaderHeight > scrollAccumulator + getToolbarOffset()) {
-                scrollPosition = scrollAccumulator;
-            } else {
-                //the toolbar is fully compacted
-                LinearLayoutManager manager = getRecyclerViewLinearLayoutManager(recyclerView);
-                if (manager != null) {
-                    int firstVisibleChild = manager.findFirstVisibleItemPosition();
-                    if (firstVisibleChild == 0) {
-                        //scroll to toolbar offset
-                        scrollPosition = mHeaderHeight - getToolbarOffset();
-                    }
-                }
-            }
-        }
-    }
-
-
-    private ArrayList<RecyclerViewObj> mRecyclerViewObjArray;
+    private ArrayList<ScrollableObject> mScrollableObjArray;
     private int mCurrentViewPage = 0;
 
     private TextView mTitleText;
@@ -83,7 +52,8 @@ public class LayoutCoordinator {
 
     private int mToolbarBackgroundOriginalY = 0;
 
-    private int scrollAccumulator = 0;
+
+    private ScrollAccumulator mScrollAccumulator;
 
     //what the custom view needs to implement in order to function properly
     public interface CoordinatorInterface {
@@ -108,29 +78,28 @@ public class LayoutCoordinator {
 
     public LayoutCoordinator(Context context) {
         mContext = context;
-        mRecyclerViewObjArray = new ArrayList<>();
+        mScrollableObjArray = new ArrayList<>();
+        mScrollAccumulator = new ScrollAccumulator(this, this);
         mRegularToolbarHeight = getDimPx(R.dimen.action_bar_height);
     }
 
 
     public void registerScrollableView(View view, String uniqueIdentifier) {
         //store view to be watched/scrolled
-        if (view instanceof RecyclerView) {
-            for (int i = 0; i < mRecyclerViewObjArray.size(); i++) {
-                if (mRecyclerViewObjArray.get(i).uniqueIdentifier == uniqueIdentifier) {
-                    // The view is being re-added. update it
-                    RecyclerViewObj obj = mRecyclerViewObjArray.get(i);
-                    obj.recyclerView = (RecyclerView) view;
-                    obj.recyclerView.setOnScrollListener(mRecyclerViewScrollWatcher());
-                    return;
-                }
-            }
 
-            RecyclerViewObj recyclerViewObj = new RecyclerViewObj((RecyclerView) view, uniqueIdentifier);
-            mRecyclerViewObjArray.add(recyclerViewObj);
-            ((RecyclerView)view).setOnScrollListener(mRecyclerViewScrollWatcher());
-            scrollRecyclerViewToPosition(recyclerViewObj, scrollAccumulator);
+        for (int i = 0; i < mScrollableObjArray.size(); i++) {
+            if (mScrollableObjArray.get(i).uniqueIdentifier.equals(uniqueIdentifier)) {
+                //the view is trying to be re-added. update it instead
+                ScrollableObject obj = mScrollableObjArray.get(i);
+                obj.updateScrollableView(view);
+                mScrollAccumulator.addViewToScrollAccumulator(obj.mScrollView);
+                return;
+            }
         }
+
+        ScrollableObject scrollableObject = new ScrollableObject(this, view, uniqueIdentifier);
+        mScrollableObjArray.add(scrollableObject);
+        mScrollAccumulator.addViewToScrollAccumulator(scrollableObject.mScrollView);
     }
 
     public void attachTitleTextView(View view) {
@@ -166,19 +135,15 @@ public class LayoutCoordinator {
     }
 
 
+
+
     public void onHeaderSizedSet(int headerHeight) {
         mHeaderHeight = headerHeight;
         mHeaderSet = true;
-        for (int i = 0; i < mRecyclerViewObjArray.size(); i++) {
-            RecyclerView view = mRecyclerViewObjArray.get(i).recyclerView;
 
-            RecyclerView.Adapter adapter = view.getAdapter();
-            if (adapter instanceof HeaderAutoFooterRecyclerAdapter) {
-                ((HeaderAutoFooterRecyclerAdapter)adapter).updateHeaderHeight(headerHeight);
-            }
-
+        for (int i = 0; i < mScrollableObjArray.size(); i++) {
+            mScrollableObjArray.get(i).updateHeader(headerHeight);
         }
-
 
     }
 
@@ -201,98 +166,65 @@ public class LayoutCoordinator {
         return null;
     }
 
-    private RecyclerView.OnScrollListener mRecyclerViewScrollWatcher() {
-        return new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                scrollAccumulator = scrollAccumulator + dy;
 
-                if (mLayoutScrollWatcher != null) {
-                    mLayoutScrollWatcher.onScrolled(scrollAccumulator);
-                }
+    @Override
+    public void onScrollAccumulation(int accumulation) {
+         if (mLayoutScrollWatcher != null) {
+            mLayoutScrollWatcher.onScrolled(accumulation);
+        }
 
-                updateCoordinatedViewsLayoutConstants();
+        updateCoordinatedViewsLayoutConstants();
 
-                //translate attached views
-                translateTitleText(scrollAccumulator);
-                translateSubTitleText(scrollAccumulator);
-                translateTabs(scrollAccumulator);
-                translateToolbarBackground(scrollAccumulator);
-                translateHeaderImage(scrollAccumulator);
+        //translate attached views
+        translateTitleText(accumulation);
+        translateSubTitleText(accumulation);
+        translateTabs(accumulation);
+        translateToolbarBackground(accumulation);
+        translateHeaderImage(accumulation);
+        translateCoordinatedViews(accumulation);
 
-                translateCoordinatedViews(scrollAccumulator);
-            }
-
-            @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                super.onScrollStateChanged(recyclerView, newState);
-                if (newState == 0) {
-                    //the scrolling has stopped. update all views in mRecyclerViewsArray
-                    updateAllRecyclerViewScroll(scrollAccumulator);
-                }
-            }
-        };
     }
 
-    private void updateAllRecyclerViewScroll(int scrollPosition) {
-
-        int toolbarOffset = getToolbarOffset();
-
-        for (int i = 0; i < mRecyclerViewObjArray.size(); i++) {
-            RecyclerViewObj recyclerViewObj = mRecyclerViewObjArray.get(i);
-            //If mHeaderView isn't fully compacted:
-            if (mHeaderHeight > scrollPosition + toolbarOffset) {
-                setRecyclerObjectsScrollHold(recyclerViewObj, scrollPosition);
-                scrollRecyclerViewToPosition(recyclerViewObj, scrollPosition);
-            } else {
-                //the toolbar is fully compacted
-                LinearLayoutManager manager = getRecyclerViewLinearLayoutManager(recyclerViewObj.recyclerView);
-                if (manager != null) {
-                    int firstVisibleChild = manager.findFirstVisibleItemPosition();
-                    if (firstVisibleChild == 0) {
-                        //scroll to toolbar offset
-                        Log.d(TAG, "mHeaderHeight: " + mHeaderHeight + ", scrollPos: " + scrollPosition + ", toolbarOff: " + toolbarOffset);
-                        if (mCurrentViewPage == i) {
-                            //were talking about the current fragment/recyclerview
-                            setRecyclerObjectsScrollHold(recyclerViewObj, scrollPosition);
-                        } else {
-                            if (mHeaderHeight - recyclerViewObj.scrollPosition > toolbarOffset) {
-                                setRecyclerObjectsScrollHold(recyclerViewObj, mHeaderHeight - toolbarOffset);
-                                scrollRecyclerViewToPosition(recyclerViewObj, mHeaderHeight - toolbarOffset);
-                            }
-                        }
-
-
-
-                    }
-                }
-
-            }
+    @Override
+    public void onScrollStateChanged(int newState, int accumulation) {
+        if (newState == 0) {
+            //the scrolling has stopped. update all views in mRecyclerViewsArray
+            updateAllScrollableObjsScroll(accumulation);
         }
     }
 
-    private int getToolbarOffset() {
+    private void updateAllScrollableObjsScroll(int scrollPosition) {
+        for (int i = 0; i < mScrollableObjArray.size(); i++) {
+            mScrollableObjArray.get(i).scroll(scrollPosition, i == mCurrentViewPage);
+        }
+    }
+
+    public int getToolbarOffset() {
         return mRegularToolbarHeight + getDimPx(R.dimen.small_tab_size);
     }
 
-
-    private void setRecyclerObjectsScrollHold(RecyclerViewObj obj, int scroll) {
-        obj.scrollPosition = scroll;
-    }
-
-    private void scrollRecyclerViewToPosition(RecyclerViewObj obj, int scrollPosition) {
-        if (obj.recyclerView.getLayoutManager() instanceof LinearLayoutManager) {
-            ((LinearLayoutManager)obj.recyclerView.getLayoutManager()).scrollToPositionWithOffset(0, -scrollPosition);
+    public int getScrollAccumulator() {
+        if (mScrollAccumulator != null) {
+            return mScrollAccumulator.getScrollAccumulation();
         }
+
+        return 0;
     }
+
+    public int getHeaderHeight() {
+        return mHeaderHeight;
+    }
+
+    public Context getContext() {
+        return mContext;
+    }
+
 
     private void reassignScrollAccumulator(int position) {
-        mRecyclerViewObjArray.get(mCurrentViewPage).scrollPosition = scrollAccumulator;
-        updateAllRecyclerViewScroll(scrollAccumulator);
-        scrollAccumulator = mRecyclerViewObjArray.get(position).scrollPosition;
+        mScrollableObjArray.get(mCurrentViewPage).mScrollPosition = mScrollAccumulator.getScrollAccumulation();
+        updateAllScrollableObjsScroll(mScrollAccumulator.getScrollAccumulation());
+        mScrollAccumulator.setScrollAccumulation(mScrollableObjArray.get(position).mScrollPosition);
         mCurrentViewPage = position;
-
     }
 
     /** Do calculations and translate the header views  */
@@ -450,6 +382,18 @@ public class LayoutCoordinator {
             Point size = new Point();
             display.getSize(size);
             return size.x;
+        }
+
+        return 0;
+    }
+
+     public int getDisplayHeight() {
+        if (mContext != null) {
+            WindowManager windowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
+            Display display = windowManager.getDefaultDisplay();
+            Point size = new Point();
+            display.getSize(size);
+            return size.y;
         }
 
         return 0;
